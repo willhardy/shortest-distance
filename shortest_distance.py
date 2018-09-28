@@ -1,4 +1,5 @@
 import pytest
+import string
 
 
 def tokenize_file(filename):
@@ -6,7 +7,7 @@ def tokenize_file(filename):
     with open(filename, 'r') as f:
         for line in f:
             for word in line.split():
-                yield word.casefold()
+                yield word.strip(string.punctuation).casefold()
 
 
 def parse_file(filename, start, end):
@@ -17,7 +18,13 @@ def parse_file(filename, start, end):
 
     # Add the position of any relevant words
     for i, token in enumerate(tokenize_file(filename)):
-        if token in db:
+
+        # Always include the start position if listed
+        if token == start:
+            db[token].append(i)
+
+        # Only add end token positions if we have already seen a start position
+        elif db[start] and token == end:
             db[token].append(i)
 
     return db
@@ -37,7 +44,7 @@ def shortest_distance(start, end):
     db = parse_file('test-input.txt', start, end)
 
     try:
-        return min(distance(s, e) for e in db[end] for s in db[start])
+        return min(distance(s, e) for e in db[end] for s in db[start] if s < e)
 
     # An empty sequence will raise a ValueError, we choose to return None
     except ValueError:
